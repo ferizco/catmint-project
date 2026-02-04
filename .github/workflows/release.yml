@@ -1,0 +1,154 @@
+name: Catmint Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write 
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      # -------------------------
+      # Build Linux (catmint)
+      # -------------------------
+      - name: Build Linux amd64
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: 0
+        run: |
+          mkdir -p dist/linux
+          go build -trimpath -ldflags "-s -w" -o dist/linux/catmint
+
+      - name: Linux README + checksum-sha256.txt + sign (cosign keyless)
+        run: |
+          cat > dist/linux/README.md << 'EOF'
+          # catmint (Linux) – Install & Verify
+
+          ## Install
+          1) Beri izin eksekusi:
+          chmod +x catmint
+          
+          2) Pindahkan ke PATH (contoh /usr/local/bin):
+          sudo mv catmint /usr/local/bin/catmint
+
+          3) Cek:
+          catmint --help
+
+          ---
+
+          ## Verify (Recommended)
+
+          ### 1) Verifikasi signature checksum (Cosign keyless)
+          Ini langkah “trust” utama sebelum percaya file yang kamu download.
+
+          cosign verify-blob \
+            --certificate checksum-sha256.txt.pem \
+            --signature checksum-sha256.txt.sig \
+            checksum-sha256.txt
+
+          ### 2) Verifikasi file pakai catmint (opsional convenience)
+          Setelah kamu percaya checksum file (step 1), kamu bisa cek file dengan catmint:
+
+          catmint verify -file ./usr/local/bin/catmint -ref checksum-sha256.txt
+
+          EOF
+
+          (cd dist/linux && sha256sum catmint README.md > checksum-sha256.txt)
+
+          cosign sign-blob --yes dist/linux/checksum-sha256.txt \
+            --output-signature dist/linux/checksum-sha256.txt.sig \
+            --output-certificate dist/linux/checksum-sha256.txt.pem
+
+      - name: Package Linux folder (tar.gz)
+        run: |
+          tar -C dist -czf dist/catmint-linux-amd64.tar.gz linux
+
+      # -------------------------
+      # Build Windows (catmint.exe)
+      # -------------------------
+      - name: Build Windows amd64
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: 0
+        run: |
+          mkdir -p dist/windows
+          go build -trimpath -ldflags "-s -w" -o dist/windows/catmint.exe
+
+      - name: Windows README + checksum-sha256.txt + sign (cosign keyless)
+        run: |
+          cat > dist/windows/README.md << 'EOF'
+          # catmint (Windows) – Install & Verify
+
+          ## Install
+          1) Buat folder, misalnya:
+          C:\catmint\
+
+          2) Pastikan binary ada di:
+          C:\catmint\catmint.exe
+
+          3) Tambahkan folder ke Environment Variable (PATH):
+          - System Properties → Advanced → Environment Variables
+          - Edit "Path" → Add:
+          C:\catmint
+
+          4) Buka Command Prompt / PowerShell baru:
+          catmint --help
+
+          ---
+
+          ## Verify (Recommended)
+
+          ### 1) Verifikasi signature checksum (Cosign keyless)
+          Ini langkah “trust” utama sebelum percaya file yang kamu download.
+
+          **PowerShell:**
+          cosign verify-blob `
+            --certificate checksum-sha256.txt.pem `
+            --signature checksum-sha256.txt.sig `
+            checksum-sha256.txt
+
+          ### 2) Verifikasi file pakai catmint (opsional convenience)
+          Setelah kamu percaya checksum file (step 1), kamu bisa cek file dengan catmint:
+
+          catmint verify -file catmint.exe -ref checksum-sha256.txt
+
+          EOF
+
+          (cd dist/windows && sha256sum catmint.exe README.md > checksum-sha256.txt)
+
+          cosign sign-blob --yes dist/windows/checksum-sha256.txt \
+            --output-signature dist/windows/checksum-sha256.txt.sig \
+            --output-certificate dist/windows/checksum-sha256.txt.pem
+
+      - name: Package Windows folder (zip)
+        run: |
+          (cd dist && zip -r catmint-windows-amd64.zip windows)
+
+      # -------------------------
+      # Release
+      # -------------------------
+      - name: Create GitHub Release + upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/catmint-linux-amd64.tar.gz
+            dist/catmint-windows-amd64.zip
