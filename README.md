@@ -26,3 +26,5 @@ catmint is a command-line tool designed for generating hash values for files. It
 Download the appropriate binary for your Linux AMD64 operating system from the [Releases](https://github.com/ferizco/catmint/releases) page.
 
 
+
+
