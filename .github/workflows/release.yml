@@ -51,7 +51,7 @@ jobs:
             dist/linux/checksum-sha256.txt
 
           # extract logIndex for online verification link
-          LINUX_LOGINDEX="$(jq -r '.verificationMaterial.tlogEntries[0].logIndex' dist/linux/checksum-sha256.txt.bundle)"
+          LINUX_LOGINDEX="$(jq -r '.. | objects | .logIndex? // empty' dist/linux/checksum-sha256.txt.bundle | head -n 1)"
           echo "LINUX_LOGINDEX=$LINUX_LOGINDEX" >> "$GITHUB_ENV"
 
           # plain-text README for Notepad-friendly viewing
@@ -115,7 +115,7 @@ jobs:
             --bundle dist/windows/checksum-sha256.txt.bundle \
             dist/windows/checksum-sha256.txt
 
-          WINDOWS_LOGINDEX="$(jq -r '.verificationMaterial.tlogEntries[0].logIndex' dist/windows/checksum-sha256.txt.bundle)"
+          WINDOWS_LOGINDEX="$(jq -r '.. | objects | .logIndex? // empty' dist/windows/checksum-sha256.txt.bundle | head -n 1)"
           echo "WINDOWS_LOGINDEX=$WINDOWS_LOGINDEX" >> "$GITHUB_ENV"
 
           cat > dist/windows/README.txt << EOF
