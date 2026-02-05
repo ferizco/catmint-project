@@ -1,4 +1,4 @@
-name: Catmint Release
+name: Release
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: write
-  id-token: write 
+  id-token: write
 
 jobs:
   release:
@@ -26,7 +26,7 @@ jobs:
         uses: sigstore/cosign-installer@v3
 
       # -------------------------
-      # Build Linux (catmint)
+      # Build + sign + package (Linux)
       # -------------------------
       - name: Build Linux amd64
         env:
@@ -34,55 +34,66 @@ jobs:
           GOARCH: amd64
           CGO_ENABLED: 0
         run: |
+          set -euo pipefail
           mkdir -p dist/linux
           go build -trimpath -ldflags "-s -w" -o dist/linux/catmint
 
-      - name: Linux README + checksum-sha256.txt + sign (cosign keyless)
+      - name: Linux checksum + sign (keyless) + README.txt
         run: |
-          cat > dist/linux/README.md << 'EOF'
-          # catmint (Linux) – Install & Verify
+          set -euo pipefail
 
-          ## Install
-          1) Beri izin eksekusi:
-          chmod +x catmint
-          
-          2) Pindahkan ke PATH (contoh /usr/local/bin):
-          sudo mv catmint /usr/local/bin/catmint
+          # checksum file in folder linux
+          (cd dist/linux && sha256sum catmint > checksum-sha256.txt)
 
-          3) Cek:
-          catmint --help
+          # sign checksum and upload to Rekor; keep bundle (contains tlog logIndex)
+          cosign sign-blob --yes \
+            --bundle dist/linux/checksum-sha256.txt.bundle \
+            dist/linux/checksum-sha256.txt
 
-          ---
+          # extract logIndex for online verification link
+          LINUX_LOGINDEX="$(jq -r '.verificationMaterial.tlogEntries[0].logIndex' dist/linux/checksum-sha256.txt.bundle)"
+          echo "LINUX_LOGINDEX=$LINUX_LOGINDEX" >> "$GITHUB_ENV"
 
-          ## Verify (Recommended)
+          # plain-text README for Notepad-friendly viewing
+          cat > dist/linux/README.txt << EOF
+          catmint – Installation & Verification Guide (Linux)
 
-          ### 1) Verifikasi signature checksum (Cosign keyless)
-          Ini langkah “trust” utama sebelum percaya file yang kamu download.
+          INSTALLATION
+          1. Pindahkan file "catmint" ke folder yang ada di PATH, contoh:
+             /usr/local/bin
 
-          cosign verify-blob \
-            --certificate checksum-sha256.txt.pem \
-            --signature checksum-sha256.txt.sig \
-            checksum-sha256.txt
+          2. Pastikan file bisa dieksekusi (command chmod +x catmint)
 
-          ### 2) Verifikasi file pakai catmint (opsional convenience)
-          Setelah kamu percaya checksum file (step 1), kamu bisa cek file dengan catmint:
+          3. Buka terminal baru dan jalankan:
+             catmint --help
 
-          catmint verify -file ./usr/local/bin/catmint -ref checksum-sha256.txt
+          Jika perintah tersebut berjalan, instalasi berhasil.
 
+          VERIFICATION (ONLINE)
+          catmint pada release ini ditandatangani secara cryptographic dan dicatat ke Sigstore Transparency Log (Rekor).
+          Verifikasi dilakukan secara online menggunakan browser, berdasarkan logIndex.
+
+          Link verifikasi (Sigstore Rekor Search):
+          https://search.sigstore.dev/?logIndex=${LINUX_LOGINDEX}
+
+          Cara cek:
+          1. Buka link di atas.
+          2. Pastikan entry menunjukkan artefak yang ditandatangani oleh GitHub Actions dari repository ini.
+
+          File dalam paket ini:
+          - catmint
+          - checksum-sha256.txt
+          - checksum-sha256.txt.bundle
+          - README.txt
           EOF
-
-          (cd dist/linux && sha256sum catmint README.md > checksum-sha256.txt)
-
-          cosign sign-blob --yes dist/linux/checksum-sha256.txt \
-            --output-signature dist/linux/checksum-sha256.txt.sig \
-            --output-certificate dist/linux/checksum-sha256.txt.pem
 
       - name: Package Linux folder (tar.gz)
         run: |
+          set -euo pipefail
           tar -C dist -czf dist/catmint-linux-amd64.tar.gz linux
 
       # -------------------------
-      # Build Windows (catmint.exe)
+      # Build + sign + package (Windows)
       # -------------------------
       - name: Build Windows amd64
         env:
@@ -90,65 +101,105 @@ jobs:
           GOARCH: amd64
           CGO_ENABLED: 0
         run: |
+          set -euo pipefail
           mkdir -p dist/windows
           go build -trimpath -ldflags "-s -w" -o dist/windows/catmint.exe
 
-      - name: Windows README + checksum-sha256.txt + sign (cosign keyless)
+      - name: Windows checksum + sign (keyless) + README.txt
         run: |
-          cat > dist/windows/README.md << 'EOF'
-          # catmint (Windows) – Install & Verify
+          set -euo pipefail
 
-          ## Install
-          1) Buat folder, misalnya:
-          C:\catmint\
+          (cd dist/windows && sha256sum catmint.exe > checksum-sha256.txt)
 
-          2) Pastikan binary ada di:
-          C:\catmint\catmint.exe
+          cosign sign-blob --yes \
+            --bundle dist/windows/checksum-sha256.txt.bundle \
+            dist/windows/checksum-sha256.txt
 
-          3) Tambahkan folder ke Environment Variable (PATH):
-          - System Properties → Advanced → Environment Variables
-          - Edit "Path" → Add:
-          C:\catmint
+          WINDOWS_LOGINDEX="$(jq -r '.verificationMaterial.tlogEntries[0].logIndex' dist/windows/checksum-sha256.txt.bundle)"
+          echo "WINDOWS_LOGINDEX=$WINDOWS_LOGINDEX" >> "$GITHUB_ENV"
 
-          4) Buka Command Prompt / PowerShell baru:
-          catmint --help
+          cat > dist/windows/README.txt << EOF
+          catmint – Installation & Verification Guide (Windows)
 
-          ---
+          INSTALLATION
+          1. Buat folder, contoh:
+             C:\catmint\
 
-          ## Verify (Recommended)
+          2. Pindahkan file "catmint.exe" ke folder tersebut.
 
-          ### 1) Verifikasi signature checksum (Cosign keyless)
-          Ini langkah “trust” utama sebelum percaya file yang kamu download.
+          3. Tambahkan folder C:\catmint ke Environment Variable (PATH).
 
-          **PowerShell:**
-          cosign verify-blob `
-            --certificate checksum-sha256.txt.pem `
-            --signature checksum-sha256.txt.sig `
-            checksum-sha256.txt
+          4. Tutup dan buka kembali Command Prompt atau PowerShell.
 
-          ### 2) Verifikasi file pakai catmint (opsional convenience)
-          Setelah kamu percaya checksum file (step 1), kamu bisa cek file dengan catmint:
+          5. Jalankan:
+             catmint --help
 
-          catmint verify -file catmint.exe -ref checksum-sha256.txt
+          Jika perintah tersebut berjalan, instalasi berhasil.
 
+          VERIFICATION (ONLINE)
+          catmint pada release ini ditandatangani secara cryptographic dan dicatat ke Sigstore Transparency Log (Rekor).
+          Verifikasi dilakukan secara online menggunakan browser, berdasarkan logIndex.
+
+          Link verifikasi (Sigstore Rekor Search):
+          https://search.sigstore.dev/?logIndex=${WINDOWS_LOGINDEX}
+
+          Cara cek:
+          1. Buka link di atas.
+          2. Pastikan entry menunjukkan artefak yang ditandatangani oleh GitHub Actions dari repository ini.
+
+          File dalam paket ini:
+          - catmint.exe
+          - checksum-sha256.txt
+          - checksum-sha256.txt.bundle
+          - README.txt
           EOF
-
-          (cd dist/windows && sha256sum catmint.exe README.md > checksum-sha256.txt)
-
-          cosign sign-blob --yes dist/windows/checksum-sha256.txt \
-            --output-signature dist/windows/checksum-sha256.txt.sig \
-            --output-certificate dist/windows/checksum-sha256.txt.pem
 
       - name: Package Windows folder (zip)
         run: |
+          set -euo pipefail
           (cd dist && zip -r catmint-windows-amd64.zip windows)
 
       # -------------------------
-      # Release
+      # Release Notes (first release)
+      # -------------------------
+      - name: Generate Release Notes (first release)
+        run: |
+          set -euo pipefail
+
+          TAG_NAME="${GITHUB_REF_NAME}"
+
+          cat > RELEASE_NOTES.txt << EOF
+          catmint ${TAG_NAME} – Initial Release
+
+          Ini adalah rilis pertama dari catmint.
+
+          catmint adalah tool untuk generate dan memverifikasi hash (checksum) dengan fokus pada transparansi dan supply-chain security.
+
+          Binary tersedia untuk:
+          - Linux (amd64)
+          - Windows (amd64)
+
+          ONLINE VERIFICATION 
+          Release ini ditandatangani secara keyless (GitHub Actions OIDC) dan dicatat ke Sigstore Rekor.
+          Kamu bisa memverifikasi keaslian secara online menggunakan link berikut:
+
+          Linux:
+          https://search.sigstore.dev/?logIndex=${LINUX_LOGINDEX}
+
+          Windows:
+          https://search.sigstore.dev/?logIndex=${WINDOWS_LOGINDEX}
+
+          Di halaman tersebut kamu bisa melihat informasi signing (waktu, hash, dan identitas workflow/repo).
+
+          EOF
+
+      # -------------------------
+      # Create GitHub Release (only 2 assets)
       # -------------------------
       - name: Create GitHub Release + upload assets
         uses: softprops/action-gh-release@v2
         with:
+          body_path: RELEASE_NOTES.txt
           files: |
             dist/catmint-linux-amd64.tar.gz
             dist/catmint-windows-amd64.zip
