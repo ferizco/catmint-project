@@ -38,4 +38,4 @@ catmint uses standard cryptographic hash algorithms. Always use the strongest su
 
 ## Questions
 
-For any other security-related questions, please use [GitHub Issues](https://github.com/ferizco/catmint/issues) 
+For any other security-related questions, please use [GitHub Issues](https://github.com/ferizco/catmint-project/issues) 
