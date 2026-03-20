@@ -9,7 +9,7 @@ import (
 	"catmint/internal"
 )
 
-const version = "1.0.0"
+const version = "v1.0.0"
 
 func Execute() {
 	// No args -> show root usage
@@ -42,6 +42,8 @@ func Execute() {
 		runHash(args)
 	case "verify":
 		runVerify(args)
+	case "show-update":
+		runShowUpdate(args)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", cmd)
 		printRootUsage()

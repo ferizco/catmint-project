@@ -26,9 +26,10 @@ Usage:
 
 Commands:
   hash        Generate hash for a file or directory
-  verify      Verify file hash OR verify directory against reference file
+  verify      Verify file hash or verify directory against reference file
   version     Show the version of the application
   help        Show this help message
+  show-update Check for available updates
 
 Global flags:
   -h, --help  Show help
