@@ -145,6 +145,7 @@ Examples:
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
+		fmt.Printf("Saved %d hash result(s) to %s\n", len(results), outputFile)
 	} else if !usedStreamingOutput {
 		for _, result := range results {
 			fmt.Printf("%s hash of file %s: %s\n", result.HashType, result.FilePath, result.Hash)

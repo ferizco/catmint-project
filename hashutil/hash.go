@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/zeebo/blake3"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -34,6 +35,8 @@ func GetHasher(hashType string) (hash.Hash, error) {
 		return md5.New(), nil
 	case "sha3-256":
 		return sha3.New256(), nil
+	case "blake3":
+		return blake3.New(), nil
 	default:
 		return nil, fmt.Errorf("unsupported hash type: %s", hashType)
 	}

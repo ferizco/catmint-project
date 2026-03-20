@@ -7,3 +7,5 @@ Semua perubahan penting pada proyek ini akan didokumentasikan dalam berkas ini.
 
 ## [v1.1.0] - 
 - Penambahan command show-update untuk mengecek available update dari catmint
+- Penambahan respon ketika hash folder yang disimpan ke file 
+- Penambahan algoritma blake3 
