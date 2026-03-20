@@ -33,7 +33,7 @@ func runHash(args []string) {
 	fs.StringVar(&dirPath, "d", "", "Alias for -dir")
 
 	// algorithm flags
-	fs.StringVar(&alg, "alg", "sha256", "Hash algorithm: sha256, sha512, sha1, md5, sha3-256")
+	fs.StringVar(&alg, "alg", "sha256", "Hash algorithm: sha256, sha512, sha1, md5, sha3-256, blake3")
 	fs.StringVar(&alg, "a", "sha256", "Alias for -alg")
 
 	// output flags

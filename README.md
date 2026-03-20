@@ -1,10 +1,10 @@
-# catmint ![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+# catmint ![version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 
 catmint is a command-line tool designed for generating hash values for files. It’s a quick and efficient solution for checking file integrity and verifying that files remain unchanged. With support for Linux, catmint provides an easy-to-use hashing solution.
 
 ## Features
 #### Hash Generation: Securely generates file hashes using various algorithms, including:
-- SHA256, SHA512, SHA1, MD5, and SHA3-256 for flexible security and compatibility.
+- SHA256, SHA512, SHA1, MD5, SHA3-256, and Blake3 for flexible security and compatibility.
 #### Batch Hashing: Process multiple files recursively in a folder, making it easy to hash entire directories at once.
 #### Customizable Output Formats: Save hash results in your preferred format:
 - TXT: Human-readable text format.
