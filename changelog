@@ -2,8 +2,10 @@
 
 Semua perubahan penting pada proyek ini akan didokumentasikan dalam berkas ini.
 
-## [1.0.0] - 4 Februari 2026
+## [v1.0.0] - 4 Februari 2026
+- New Release
 
-### New Release
-
-
+## [v1.1.0] - 
+- Penambahan command show-update untuk mengecek available update dari catmint
+- Penambahan respon ketika hash folder yang disimpan ke file 
+- Penambahan algoritma blake3 
