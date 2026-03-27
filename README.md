@@ -1,4 +1,4 @@
-# catmint ![version](https://img.shields.io/badge/version-1.1.0-blue.svg)
+# catmint ![version](https://img.shields.io/badge/version-1.1.1-blue.svg)
 
 catmint is a command-line tool designed for generating hash values for files. It’s a quick and efficient solution for checking file integrity and verifying that files remain unchanged. With support for Linux, catmint provides an easy-to-use hashing solution.
 

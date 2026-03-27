@@ -169,9 +169,9 @@ jobs:
           TAG_NAME="${GITHUB_REF_NAME}"
 
           cat > RELEASE_NOTES.txt << EOF
-          catmint ${TAG_NAME} – Initial Release
+          catmint ${TAG_NAME} – Patch update
 
-          Ini adalah rilis pertama dari catmint.
+          Ini adalah rilis untuk patching dari catmint.
 
           catmint adalah tool untuk generate dan memverifikasi hash (checksum) dengan fokus pada transparansi dan supply-chain security.
 

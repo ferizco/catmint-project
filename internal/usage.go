@@ -17,7 +17,7 @@ _╱ ___╲╲__  ╲╲   __╲╱     ╲│  │╱    ╲   __╲ │  │  
 // PrintUsage prints ROOT help (catmint with no args / catmint help).
 func PrintUsage(fs *flag.FlagSet, version string) {
 	fmt.Print(banner)
-	fmt.Fprintf(os.Stderr, `simple, fast & ergonomic hash utility
+	fmt.Fprintf(os.Stderr, `Fast & Trustworthy File Integrity Checking
 Version: %s
 Author: Ferizco
 
