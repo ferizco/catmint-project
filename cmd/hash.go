@@ -22,6 +22,7 @@ func runHash(args []string) {
 		dirPath    string
 		alg        string
 		outputFile string
+		excludes   stringListFlag
 	)
 
 	// file flags
@@ -38,6 +39,7 @@ func runHash(args []string) {
 
 	// output flags
 	fs.StringVar(&outputFile, "o", "", "Output file (supports .txt, .json, .csv)")
+	fs.Var(&excludes, "exclude", "Path to exclude when hashing a directory (repeatable, comma-separated values supported)")
 
 	// Help for this command
 	for _, a := range args {
@@ -47,6 +49,7 @@ Examples:
   catmint hash -f test.txt -a sha256
   catmint hash -f test.txt -alg sha256 -o hash.txt
   catmint hash -d ./myfolder -alg sha512 -o hash.json
+  catmint hash -d ./myfolder --exclude ./myfolder/tmp --exclude ./myfolder/hash.json
 `)
 			return
 		}
@@ -99,7 +102,7 @@ Examples:
 	// Dir mode
 	if dirPath != "" {
 		if outputFile != "" {
-			dirResults, err := hashutil.GenerateDirHash(dirPath, hashType, nil, nil)
+			dirResults, err := hashutil.GenerateDirHashWithExcludes(dirPath, hashType, []string(excludes), nil, nil)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				hadError = true
@@ -111,7 +114,7 @@ Examples:
 			errorCount := 0
 			usedStreamingOutput = true
 
-			_, err := hashutil.GenerateDirHash(dirPath, hashType,
+			_, err := hashutil.GenerateDirHashWithExcludes(dirPath, hashType, []string(excludes),
 				func(res hashutil.HashResult) {
 					fmt.Printf("%s hash of file %s: %s\n", res.HashType, res.FilePath, res.Hash)
 					successCount++

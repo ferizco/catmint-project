@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -22,6 +23,9 @@ func runVerify(args []string) {
 		expectedHash string
 		refPath      string
 		alg          string
+		excludes     stringListFlag
+		quiet        bool
+		jsonOutput   bool
 	)
 
 	// file flags
@@ -37,9 +41,12 @@ func runVerify(args []string) {
 
 	// reference file for directory verify against reference
 	fs.StringVar(&refPath, "ref", "", "Path to file containing reference hashes (.txt, .json, .csv)")
+	fs.Var(&excludes, "exclude", "Path to exclude when verifying a directory (repeatable, comma-separated values supported)")
+	fs.BoolVar(&quiet, "quiet", false, "Suppress successful verification output")
+	fs.BoolVar(&jsonOutput, "json", false, "Print verification report as JSON")
 
 	// algorithm flags
-	fs.StringVar(&alg, "alg", "sha256", "Hash algorithm: sha256, sha512, sha1, md5, sha3-256")
+	fs.StringVar(&alg, "alg", "sha256", "Hash algorithm: sha256, sha512, sha1, md5, sha3-256, blake3")
 	fs.StringVar(&alg, "a", "sha256", "Alias for -alg")
 
 	// Help for this command
@@ -56,6 +63,8 @@ Modes:
 Examples:
   catmint verify -f test.txt -hash <HASH>
   catmint verify -d ./myfolder -ref hash.json
+  catmint verify -d ./myfolder -ref hash.json --exclude ./myfolder/tmp
+  catmint verify -d ./myfolder -ref hash.json --json
 `)
 			return
 		}
@@ -68,6 +77,11 @@ Examples:
 	}
 
 	hashType := strings.TrimSpace(alg)
+
+	if quiet && jsonOutput {
+		fmt.Fprintln(os.Stderr, "Error: use only one of --quiet or --json")
+		os.Exit(1)
+	}
 
 	// Validate algo early
 	if _, err := hashutil.GetHasher(hashType); err != nil {
@@ -96,7 +110,17 @@ Examples:
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("File %s: hash matches!\n", filePath)
+		if jsonOutput {
+			if err := json.NewEncoder(os.Stdout).Encode(map[string]interface{}{
+				"file_path": filePath,
+				"matched":   true,
+			}); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+		} else if !quiet {
+			fmt.Printf("File %s: hash matches!\n", filePath)
+		}
 		return
 	}
 
@@ -113,13 +137,30 @@ Examples:
 			os.Exit(1)
 		}
 
-		actual, err := hashutil.GenerateDirHash(dirPath, hashType, nil, nil)
+		allExcludes := append([]string{refPath}, []string(excludes)...)
+
+		actual, err := hashutil.GenerateDirHashWithExcludes(dirPath, hashType, allExcludes, nil, nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Gagal hashing direktori: %v\n", err)
 			os.Exit(1)
 		}
 
-		hashutil.CompareResults(actual, reference)
+		reference = hashutil.ExcludeResultsForBase(reference, dirPath, allExcludes)
+		actual = hashutil.NormalizeResultsForBase(actual, dirPath)
+		reference = hashutil.NormalizeResultsForBase(reference, dirPath)
+
+		report := hashutil.CompareResults(actual, reference)
+		if jsonOutput {
+			if err := json.NewEncoder(os.Stdout).Encode(report); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+		} else if !quiet {
+			hashutil.PrintCompareReport(report)
+		}
+		if report.HasFailures() {
+			os.Exit(1)
+		}
 		return
 	}
 }

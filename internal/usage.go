@@ -6,12 +6,12 @@ import (
 	"os"
 )
 
-const banner = `               __          .__        __    .__                  .__     
-  ____ _____ _╱  │_  _____ │__│ _____╱  │_  │  │__ _____    _____│  │__  
-_╱ ___╲╲__  ╲╲   __╲╱     ╲│  │╱    ╲   __╲ │  │  ╲╲__  ╲  ╱  ___╱  │  ╲ 
-╲  ╲___ ╱ __ ╲│  │ │  Y Y  ╲  │   │  ╲  │   │   Y  ╲╱ __ ╲_╲___ ╲│   Y  ╲
- ╲___  >____  ╱__│ │__│_│  ╱__│___│  ╱__│   │___│  (____  ╱____  >___│  ╱
-     ╲╱     ╲╱           ╲╱        ╲╱            ╲╱     ╲╱     ╲╱     ╲╱ 
+const banner = `
+   ____      _                 _       _
+  / ___|__ _| |_ _ __ ___  ___(_)_ __ | |_
+ | |   / _' | __| '_ ' _ \/ __| | '_ \| __|
+ | |__| (_| | |_| | | | | \__ \ | | | | |_
+  \____\__,_|\__|_| |_| |_|___/_|_| |_|\__|
 `
 
 // PrintUsage prints ROOT help (catmint with no args / catmint help).
@@ -40,8 +40,10 @@ Use "catmint <command> --help" to see available options.
 Examples:
   catmint hash -file test.txt -alg sha256 -o hash.txt
   catmint hash -dir ./myfolder -alg sha512 -o hash.json
+  catmint hash -dir ./myfolder -o hash.json --exclude tmp
   catmint verify -file test.txt -hash <EXPECTED_HASH> -alg sha256
   catmint verify -dir ./myfolder -ref hash.json -alg sha256
+  catmint verify -dir ./myfolder -ref hash.json --json
 `, version)
 
 	// Root help doesn't need fs.PrintDefaults() because root has no flags in command mode.
@@ -61,7 +63,7 @@ Usage:
 Options:
 `, version, command)
 
-	// Important: this prints the actual flags defined on the command FlagSet
+	// Important: this prints the actual flags defined on the command FlagSet.
 	fs.SetOutput(os.Stderr)
 	fs.PrintDefaults()
 

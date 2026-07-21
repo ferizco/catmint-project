@@ -9,7 +9,7 @@ import (
 	"catmint/internal"
 )
 
-const version = "v1.1.1"
+const version = "v1.2.0"
 
 func Execute() {
 	// No args -> show root usage

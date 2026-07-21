@@ -1,0 +1,43 @@
+# Build artifacts
+bin/
+dist/
+build/
+out/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.prof
+*.cover
+coverage.out
+
+# Generated hash/output files
+hash.json
+hash.csv
+hash.txt
+Roadmap release.md
+
+# Go workspace and local caches
+go.work
+go.work.sum
+.gocache/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# IDE/editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Signing/release leftovers
+*.bundle
+RELEASE_NOTES.txt

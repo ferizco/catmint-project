@@ -6,6 +6,22 @@ import (
 	"strings"
 )
 
+type stringListFlag []string
+
+func (f *stringListFlag) String() string {
+	return strings.Join(*f, ",")
+}
+
+func (f *stringListFlag) Set(value string) error {
+	for _, item := range strings.Split(value, ",") {
+		item = strings.TrimSpace(item)
+		if item != "" {
+			*f = append(*f, item)
+		}
+	}
+	return nil
+}
+
 func detectOutputFormat(outputFile string) (string, error) {
 	if strings.TrimSpace(outputFile) == "" {
 		return "txt", nil

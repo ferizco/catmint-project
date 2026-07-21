@@ -1,30 +1,156 @@
-# catmint ![version](https://img.shields.io/badge/version-1.1.1-blue.svg)
+# catmint ![version](https://img.shields.io/badge/version-1.2.0-blue.svg)
 
-catmint is a command-line tool designed for generating hash values for files. It’s a quick and efficient solution for checking file integrity and verifying that files remain unchanged. With support for Linux, catmint provides an easy-to-use hashing solution.
+catmint is a small command-line tool for generating and verifying file hashes. It is useful for integrity checks, folder checksum snapshots, and CI scripts that need a clear success or failure exit code.
 
-## Features
-#### Hash Generation: Securely generates file hashes using various algorithms, including:
-- SHA256, SHA512, SHA1, MD5, SHA3-256, and Blake3 for flexible security and compatibility.
-#### Batch Hashing: Process multiple files recursively in a folder, making it easy to hash entire directories at once.
-#### Customizable Output Formats: Save hash results in your preferred format:
-- TXT: Human-readable text format.
-- CSV: Structured tabular format for data analysis.
-- JSON: Ideal for integration with other tools or applications.
-#### Verification Mode: Check file integrity by comparing calculated hashes against expected values.
-#### Bulk Verification Mode: Check the integrity of all files in a directory by comparing their hashes against a reference file generated previously:
-- Supports .json, .csv, and .txt formats exported using the -o flag.
-#### User-Friendly CLI:
-- Minimal arguments required for quick hash generation.
-- Displays clear messages for errors, process updates, and results.
+## Highlights
 
-## Different than Others
-- Supports SHA3-256 Algorithm: Offering cutting-edge hashing technology beyond standard algorithms.
-- Batch File Hashing: Process multiple files in a folder effortlessly.
-- Flexible Output Formats: Save results in TXT, CSV, or JSON formats to suit your needs.
+- Hash a single file or an entire directory recursively.
+- Verify a single file against an expected hash.
+- Verify a directory against a previously exported reference file.
+- Export hash results as TXT, CSV, or JSON.
+- Exclude files or directories from recursive hashing and verification.
+- Print human-readable or JSON verification reports.
+
+## Supported Algorithms
+
+- SHA256
+- SHA512
+- SHA1
+- MD5
+- SHA3-256
+- Blake3
+
+For security-sensitive verification, prefer SHA256, SHA512, SHA3-256, or Blake3. MD5 and SHA1 are kept for compatibility.
 
 ## Installation
-Download the appropriate binary for your Linux AMD64 operating system from the [Releases](https://github.com/ferizco/catmint-project/releases) page.
 
+Download the binary for your operating system from the [Releases](https://github.com/ferizco/catmint-project/releases) page.
 
+Available release builds:
 
+- Linux amd64
+- Windows amd64
 
+After installing, confirm that catmint is available:
+
+```sh
+catmint --version
+catmint --help
+```
+
+## Quick Start
+
+Hash a single file:
+
+```sh
+catmint hash -f test.txt -a sha256
+```
+
+Hash a directory and save the result as JSON:
+
+```sh
+catmint hash -d ./myfolder -a sha256 -o hash.json
+```
+
+Verify a single file:
+
+```sh
+catmint verify -f test.txt -hash <EXPECTED_HASH> -a sha256
+```
+
+Verify a directory against a reference file:
+
+```sh
+catmint verify -d ./myfolder -ref hash.json -a sha256
+```
+
+## Commands
+
+### `hash`
+
+Generate hashes for a file or directory.
+
+```sh
+catmint hash -f <file> [-a algorithm] [-o output.txt|output.csv|output.json]
+catmint hash -d <directory> [-a algorithm] [-o output.txt|output.csv|output.json] [--exclude path]
+```
+
+Useful options:
+
+- `-f`, `-file` - File to hash.
+- `-d`, `-dir` - Directory to hash recursively.
+- `-a`, `-alg` - Hash algorithm. Default: `sha256`.
+- `-o` - Output file. Supports `.txt`, `.csv`, and `.json`.
+- `--exclude` - Exclude a file or directory while hashing a directory. Can be repeated and also accepts comma-separated values.
+
+Examples:
+
+```sh
+catmint hash -d ./myfolder -o hash.json --exclude tmp --exclude hash.json
+catmint hash -d ./myfolder -o hash.json --exclude tmp,dist
+```
+
+### `verify`
+
+Verify a file or directory.
+
+```sh
+catmint verify -f <file> -hash <expected_hash> [-a algorithm] [--quiet] [--json]
+catmint verify -d <directory> -ref <reference.json|reference.csv|reference.txt> [-a algorithm] [--exclude path] [--quiet] [--json]
+```
+
+Useful options:
+
+- `-f`, `-file` - File to verify.
+- `-d`, `-dir` - Directory to verify recursively.
+- `-hash` - Expected hash for single-file verification.
+- `-ref` - Reference file for directory verification. Supports `.txt`, `.csv`, and `.json`.
+- `-a`, `-alg` - Hash algorithm. Default: `sha256`.
+- `--exclude` - Exclude a file or directory from directory verification. Can be repeated and also accepts comma-separated values.
+- `--quiet` - Suppress successful verification output. Errors are still printed to stderr.
+- `--json` - Print the verification result as JSON.
+
+Directory verification normalizes paths relative to the target directory. The reference file passed with `-ref` is ignored automatically, so storing `hash.json` inside the verified folder will not cause a false failure.
+
+Examples:
+
+```sh
+catmint verify -d ./myfolder -ref hash.json --exclude tmp
+catmint verify -d ./myfolder -ref hash.json --exclude tmp,dist --json
+catmint verify -d ./myfolder -ref hash.json --quiet
+```
+
+### `show-update`
+
+Check whether a newer GitHub release is available.
+
+```sh
+catmint show-update
+```
+
+## Exit Codes
+
+- `0` - Command completed successfully.
+- `1` - Hashing, verification, parsing, or output writing failed.
+- `2` - Command usage error, such as a missing or unknown command.
+
+For directory verification, exit code `1` is returned when catmint finds mismatches, files missing from the reference, or reference entries missing from the actual directory.
+
+## Reference Files
+
+Directory verification uses reference files generated by catmint:
+
+```sh
+catmint hash -d ./myfolder -o hash.json
+catmint verify -d ./myfolder -ref hash.json
+```
+
+Supported reference formats:
+
+- TXT
+- CSV
+- JSON
+
+## Security Notes
+
+catmint helps verify file integrity, but it does not prove that a file is trustworthy by itself. Always compare hashes from trusted sources and keep catmint updated.

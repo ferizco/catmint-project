@@ -22,12 +22,16 @@ jobs:
         with:
           go-version: "1.22"
 
+      - name: Run unit tests
+        run: go test ./...
+
+      - name: Run go vet
+        run: go vet ./...
+
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
-      # -------------------------
       # Build + sign + package (Linux)
-      # -------------------------
       - name: Build Linux amd64
         env:
           GOOS: linux
@@ -56,7 +60,7 @@ jobs:
 
           # plain-text README for Notepad-friendly viewing
           cat > dist/linux/README.txt << EOF
-          catmint – Installation & Verification Guide (Linux)
+          catmint - Installation & Verification Guide (Linux)
 
           INSTALLATION
           1. Pindahkan file "catmint" ke folder yang ada di PATH, contoh:
@@ -92,9 +96,7 @@ jobs:
           set -euo pipefail
           tar -C dist -czf dist/catmint-linux-amd64.tar.gz linux
 
-      # -------------------------
       # Build + sign + package (Windows)
-      # -------------------------
       - name: Build Windows amd64
         env:
           GOOS: windows
@@ -119,7 +121,7 @@ jobs:
           echo "WINDOWS_LOGINDEX=$WINDOWS_LOGINDEX" >> "$GITHUB_ENV"
 
           cat > dist/windows/README.txt << EOF
-          catmint – Installation & Verification Guide (Windows)
+          catmint - Installation & Verification Guide (Windows)
 
           INSTALLATION
           1. Buat folder, contoh:
@@ -159,17 +161,15 @@ jobs:
           set -euo pipefail
           (cd dist && zip -r catmint-windows-amd64.zip windows)
 
-      # -------------------------
-      # Release Notes (first release)
-      # -------------------------
-      - name: Generate Release Notes (first release)
+      # Release Notes
+      - name: Generate Release Notes
         run: |
           set -euo pipefail
 
           TAG_NAME="${GITHUB_REF_NAME}"
 
           cat > RELEASE_NOTES.txt << EOF
-          catmint ${TAG_NAME} – Patch update
+          catmint ${TAG_NAME} - Patch update
 
           Ini adalah rilis untuk patching dari catmint.
 
@@ -179,7 +179,7 @@ jobs:
           - Linux (amd64)
           - Windows (amd64)
 
-          ONLINE VERIFICATION 
+          ONLINE VERIFICATION
           Release ini ditandatangani secara keyless (GitHub Actions OIDC) dan dicatat ke Sigstore Rekor.
           Kamu bisa memverifikasi keaslian secara online menggunakan link berikut:
 
@@ -193,9 +193,6 @@ jobs:
 
           EOF
 
-      # -------------------------
-      # Create GitHub Release (only 2 assets)
-      # -------------------------
       - name: Create GitHub Release + upload assets
         uses: softprops/action-gh-release@v2
         with:
