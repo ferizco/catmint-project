@@ -40,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/linux
-          go build -trimpath -ldflags "-s -w" -o dist/linux/catmint
+          go build -trimpath -ldflags "-s -w -X catmint/cmd.version=${GITHUB_REF_NAME}" -o dist/linux/catmint
 
       - name: Linux checksum + sign (keyless) + README.txt
         run: |
@@ -63,28 +63,30 @@ jobs:
           catmint - Installation & Verification Guide (Linux)
 
           INSTALLATION
-          1. Pindahkan file "catmint" ke folder yang ada di PATH, contoh:
+          1. Move the "catmint" binary to a directory in your PATH, for example:
              /usr/local/bin
 
-          2. Pastikan file bisa dieksekusi (command chmod +x catmint)
+          2. Make the binary executable:
+             chmod +x catmint
 
-          3. Buka terminal baru dan jalankan:
+          3. Open a new terminal and run:
+             catmint --version
              catmint --help
 
-          Jika perintah tersebut berjalan, instalasi berhasil.
+          If both commands run successfully, installation is complete.
 
-          VERIFICATION (ONLINE)
-          catmint pada release ini ditandatangani secara cryptographic dan dicatat ke Sigstore Transparency Log (Rekor).
-          Verifikasi dilakukan secara online menggunakan browser, berdasarkan logIndex.
+          ONLINE VERIFICATION
+          This release is cryptographically signed and recorded in the Sigstore Transparency Log (Rekor).
+          Online verification can be performed in a browser using the logIndex below.
 
-          Link verifikasi (Sigstore Rekor Search):
+          Sigstore Rekor Search:
           https://search.sigstore.dev/?logIndex=${LINUX_LOGINDEX}
 
-          Cara cek:
-          1. Buka link di atas.
-          2. Pastikan entry menunjukkan artefak yang ditandatangani oleh GitHub Actions dari repository ini.
+          How to check:
+          1. Open the link above.
+          2. Confirm that the entry shows an artifact signed by GitHub Actions from this repository.
 
-          File dalam paket ini:
+          Files in this package:
           - catmint
           - checksum-sha256.txt
           - checksum-sha256.txt.bundle
@@ -105,7 +107,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/windows
-          go build -trimpath -ldflags "-s -w" -o dist/windows/catmint.exe
+          go build -trimpath -ldflags "-s -w -X catmint/cmd.version=${GITHUB_REF_NAME}" -o dist/windows/catmint.exe
 
       - name: Windows checksum + sign (keyless) + README.txt
         run: |
@@ -124,32 +126,33 @@ jobs:
           catmint - Installation & Verification Guide (Windows)
 
           INSTALLATION
-          1. Buat folder, contoh:
+          1. Create a directory, for example:
              C:\catmint\
 
-          2. Pindahkan file "catmint.exe" ke folder tersebut.
+          2. Move "catmint.exe" into that directory.
 
-          3. Tambahkan folder C:\catmint ke Environment Variable (PATH).
+          3. Add C:\catmint to your PATH environment variable.
 
-          4. Tutup dan buka kembali Command Prompt atau PowerShell.
+          4. Close and reopen Command Prompt or PowerShell.
 
-          5. Jalankan:
+          5. Run:
+             catmint --version
              catmint --help
 
-          Jika perintah tersebut berjalan, instalasi berhasil.
+          If both commands run successfully, installation is complete.
 
-          VERIFICATION (ONLINE)
-          catmint pada release ini ditandatangani secara cryptographic dan dicatat ke Sigstore Transparency Log (Rekor).
-          Verifikasi dilakukan secara online menggunakan browser, berdasarkan logIndex.
+          ONLINE VERIFICATION
+          This release is cryptographically signed and recorded in the Sigstore Transparency Log (Rekor).
+          Online verification can be performed in a browser using the logIndex below.
 
-          Link verifikasi (Sigstore Rekor Search):
+          Sigstore Rekor Search:
           https://search.sigstore.dev/?logIndex=${WINDOWS_LOGINDEX}
 
-          Cara cek:
-          1. Buka link di atas.
-          2. Pastikan entry menunjukkan artefak yang ditandatangani oleh GitHub Actions dari repository ini.
+          How to check:
+          1. Open the link above.
+          2. Confirm that the entry shows an artifact signed by GitHub Actions from this repository.
 
-          File dalam paket ini:
+          Files in this package:
           - catmint.exe
           - checksum-sha256.txt
           - checksum-sha256.txt.bundle
@@ -168,20 +171,43 @@ jobs:
 
           TAG_NAME="${GITHUB_REF_NAME}"
 
+          awk -v tag="## [${TAG_NAME}]" '
+            $0 == tag || index($0, tag " ") == 1 || index($0, tag " - ") == 1 {
+              found=1
+              next
+            }
+            found && /^## / {
+              exit
+            }
+            found {
+              print
+            }
+          ' CHANGELOG.md > CHANGELOG_SECTION.txt
+
+          if [ ! -s CHANGELOG_SECTION.txt ]; then
+            cat > CHANGELOG_SECTION.txt << EOF
+          Release notes for ${TAG_NAME} were not found in CHANGELOG.md.
+          EOF
+          fi
+
           cat > RELEASE_NOTES.txt << EOF
-          catmint ${TAG_NAME} - Patch update
+          # catmint ${TAG_NAME}
 
-          Ini adalah rilis untuk patching dari catmint.
+          catmint is a CLI tool for generating and verifying file hashes, with support for recursive directory hashing, exportable references, and CI-friendly verification.
 
-          catmint adalah tool untuk generate dan memverifikasi hash (checksum) dengan fokus pada transparansi dan supply-chain security.
+          ## Changes
 
-          Binary tersedia untuk:
-          - Linux (amd64)
-          - Windows (amd64)
+          $(cat CHANGELOG_SECTION.txt)
 
-          ONLINE VERIFICATION
-          Release ini ditandatangani secara keyless (GitHub Actions OIDC) dan dicatat ke Sigstore Rekor.
-          Kamu bisa memverifikasi keaslian secara online menggunakan link berikut:
+          ## Release Assets
+
+          - Linux amd64
+          - Windows amd64
+
+          ## Online Verification
+
+          This release is signed keylessly using GitHub Actions OIDC and recorded in Sigstore Rekor.
+          You can verify release provenance using the links below.
 
           Linux:
           https://search.sigstore.dev/?logIndex=${LINUX_LOGINDEX}
@@ -189,8 +215,7 @@ jobs:
           Windows:
           https://search.sigstore.dev/?logIndex=${WINDOWS_LOGINDEX}
 
-          Di halaman tersebut kamu bisa melihat informasi signing (waktu, hash, dan identitas workflow/repo).
-
+          The Rekor entries show signing time, artifact hash, and GitHub Actions workflow identity.
           EOF
 
       - name: Create GitHub Release + upload assets

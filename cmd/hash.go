@@ -23,6 +23,7 @@ func runHash(args []string) {
 		alg        string
 		outputFile string
 		excludes   stringListFlag
+		relative   bool
 	)
 
 	// file flags
@@ -40,6 +41,7 @@ func runHash(args []string) {
 	// output flags
 	fs.StringVar(&outputFile, "o", "", "Output file (supports .txt, .json, .csv)")
 	fs.Var(&excludes, "exclude", "Path to exclude when hashing a directory (repeatable, comma-separated values supported)")
+	fs.BoolVar(&relative, "relative", false, "Store directory hash file paths relative to the target directory")
 
 	// Help for this command
 	for _, a := range args {
@@ -49,6 +51,7 @@ Examples:
   catmint hash -f test.txt -a sha256
   catmint hash -f test.txt -alg sha256 -o hash.txt
   catmint hash -d ./myfolder -alg sha512 -o hash.json
+  catmint hash -d ./myfolder -alg sha512 -o hash.json --relative
   catmint hash -d ./myfolder --exclude ./myfolder/tmp --exclude ./myfolder/hash.json
 `)
 			return
@@ -107,6 +110,9 @@ Examples:
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				hadError = true
 			} else {
+				if relative {
+					dirResults = hashutil.NormalizeResultsForBase(dirResults, dirPath)
+				}
 				results = append(results, dirResults...)
 			}
 		} else {
@@ -116,17 +122,20 @@ Examples:
 
 			_, err := hashutil.GenerateDirHashWithExcludes(dirPath, hashType, []string(excludes),
 				func(res hashutil.HashResult) {
+					if relative {
+						res = hashutil.NormalizeResultForBase(res, dirPath)
+					}
 					fmt.Printf("%s hash of file %s: %s\n", res.HashType, res.FilePath, res.Hash)
 					successCount++
 				},
 				func(path string, err error) {
-					fmt.Fprintf(os.Stderr, "Gagal hash file %s: %v\n", path, err)
+					fmt.Fprintf(os.Stderr, "Failed to hash file %s: %v\n", path, err)
 					errorCount++
 				},
 			)
 
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error saat menjelajah direktori: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Failed to walk directory: %v\n", err)
 				hadError = true
 			}
 			fmt.Printf("\nSummary: %d success, %d failed\n", successCount, errorCount)

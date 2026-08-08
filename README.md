@@ -31,12 +31,20 @@ Available release builds:
 - Linux amd64
 - Windows amd64
 
+## Project Documents
+
+- [Changelog](CHANGELOG.md)
+- [Security Policy](SECURITY.md)
+- [License](LICENSE)
+
 After installing, confirm that catmint is available:
 
 ```sh
 catmint --version
 catmint --help
 ```
+
+Local builds use `dev` as the default version. Release builds inject the version from the Git tag at build time.
 
 ## Quick Start
 
@@ -50,6 +58,12 @@ Hash a directory and save the result as JSON:
 
 ```sh
 catmint hash -d ./myfolder -a sha256 -o hash.json
+```
+
+Hash a directory using portable relative paths:
+
+```sh
+catmint hash -d ./myfolder -a sha256 -o hash.json --relative
 ```
 
 Verify a single file:
@@ -72,7 +86,7 @@ Generate hashes for a file or directory.
 
 ```sh
 catmint hash -f <file> [-a algorithm] [-o output.txt|output.csv|output.json]
-catmint hash -d <directory> [-a algorithm] [-o output.txt|output.csv|output.json] [--exclude path]
+catmint hash -d <directory> [-a algorithm] [-o output.txt|output.csv|output.json] [--exclude path] [--relative]
 ```
 
 Useful options:
@@ -82,12 +96,14 @@ Useful options:
 - `-a`, `-alg` - Hash algorithm. Default: `sha256`.
 - `-o` - Output file. Supports `.txt`, `.csv`, and `.json`.
 - `--exclude` - Exclude a file or directory while hashing a directory. Can be repeated and also accepts comma-separated values.
+- `--relative` - Store directory hash file paths relative to the target directory.
 
 Examples:
 
 ```sh
 catmint hash -d ./myfolder -o hash.json --exclude tmp --exclude hash.json
 catmint hash -d ./myfolder -o hash.json --exclude tmp,dist
+catmint hash -d ./myfolder -o hash.json --relative
 ```
 
 ### `verify`
@@ -111,6 +127,8 @@ Useful options:
 - `--json` - Print the verification result as JSON.
 
 Directory verification normalizes paths relative to the target directory. The reference file passed with `-ref` is ignored automatically, so storing `hash.json` inside the verified folder will not cause a false failure.
+
+For single-file verification, `--json` prints a structured result for both success and mismatch cases. Mismatch still exits with code `1`, but the output remains machine-readable.
 
 Examples:
 
@@ -150,6 +168,61 @@ Supported reference formats:
 - TXT
 - CSV
 - JSON
+
+## Testing
+
+Run all unit and smoke tests:
+
+```sh
+go test ./...
+```
+
+Run tests with verbose output:
+
+```sh
+go test -v ./...
+```
+
+Run only the CLI smoke tests:
+
+```sh
+go test -v ./tests
+```
+
+The CLI smoke tests build a temporary Catmint binary and run the main command flows end-to-end, including `hash`, `verify`, `--exclude`, `--quiet`, `--json`, and expected failure cases.
+
+The `show-update` smoke test is disabled by default because it requires network access to the GitHub API. Enable it explicitly when needed:
+
+PowerShell:
+
+```powershell
+$env:CATMINT_SMOKE_NETWORK = "1"
+go test -v ./tests
+```
+
+Shell:
+
+```sh
+CATMINT_SMOKE_NETWORK=1 go test -v ./tests
+```
+
+Run static analysis:
+
+```sh
+go vet ./...
+```
+
+Build locally:
+
+```sh
+go build .
+```
+
+Build locally with an explicit version:
+
+```sh
+go build -ldflags "-X catmint/cmd.version=v1.3.0" .
+```
 
 ## Security Notes
 

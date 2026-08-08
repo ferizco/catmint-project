@@ -18,6 +18,9 @@ hash.csv
 hash.txt
 Roadmap release.md
 
+# Internal local notes
+.notes/
+
 # Go workspace and local caches
 go.work
 go.work.sum

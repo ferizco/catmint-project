@@ -89,8 +89,8 @@ func TestLoadHashReferenceUnsupportedExtension(t *testing.T) {
 	refPath := createTestFileAt(t, tmp, "hash.xml", "<hash></hash>")
 
 	_, err := hashutil.LoadHashReference(refPath)
-	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "tidak didukung") {
-		t.Fatalf("seharusnya error format tidak didukung, dapat: %v", err)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "unsupported") {
+		t.Fatalf("expected unsupported format error, got: %v", err)
 	}
 }
 
@@ -100,7 +100,7 @@ func TestLoadHashReferenceInvalidJSON(t *testing.T) {
 
 	_, err := hashutil.LoadHashReference(refPath)
 	if err == nil {
-		t.Fatal("seharusnya error untuk JSON invalid")
+		t.Fatal("expected invalid JSON error")
 	}
 }
 
@@ -109,8 +109,8 @@ func TestLoadHashReferenceEmptyCSV(t *testing.T) {
 	refPath := createTestFileAt(t, tmp, "hash.csv", "File Path,Hash Type,Hash\n")
 
 	_, err := hashutil.LoadHashReference(refPath)
-	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "tidak berisi data") {
-		t.Fatalf("seharusnya error CSV kosong, dapat: %v", err)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "does not contain data") {
+		t.Fatalf("expected empty CSV error, got: %v", err)
 	}
 }
 

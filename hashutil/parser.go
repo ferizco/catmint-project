@@ -20,7 +20,7 @@ func LoadHashReference(path string) ([]HashResult, error) {
 	case ".txt":
 		return loadTXT(path)
 	default:
-		return nil, fmt.Errorf("format referensi tidak didukung: %s", ext)
+		return nil, fmt.Errorf("unsupported reference format: %s", ext)
 	}
 }
 
@@ -50,7 +50,7 @@ func loadCSV(path string) ([]HashResult, error) {
 	}
 
 	if len(rows) < 2 {
-		return nil, errors.New("file CSV tidak berisi data")
+		return nil, errors.New("CSV reference file does not contain data")
 	}
 
 	var results []HashResult

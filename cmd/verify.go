@@ -12,6 +12,15 @@ import (
 	"catmint/internal"
 )
 
+type fileVerifyReport struct {
+	FilePath     string `json:"file_path"`
+	Matched      bool   `json:"matched"`
+	ExpectedHash string `json:"expected_hash,omitempty"`
+	ActualHash   string `json:"actual_hash,omitempty"`
+	HashType     string `json:"hash_type"`
+	Error        string `json:"error,omitempty"`
+}
+
 func runVerify(args []string) {
 	fs := flag.NewFlagSet("verify", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
@@ -106,20 +115,41 @@ Examples:
 			fmt.Fprintln(os.Stderr, "Error: -hash (expected hash) is required when using -file/-f")
 			os.Exit(1)
 		}
-		if err := hashutil.VerifyFileHash(filePath, hashType, expectedHash); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+
+		result, err := hashutil.GenerateFileHash(filePath, hashType)
+		if err != nil {
+			if jsonOutput {
+				writeFileVerifyReport(fileVerifyReport{
+					FilePath: filePath,
+					Matched:  false,
+					HashType: strings.ToUpper(hashType),
+					Error:    err.Error(),
+				})
+			} else {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			}
 			os.Exit(1)
 		}
+
+		matched := strings.EqualFold(result.Hash, expectedHash)
 		if jsonOutput {
-			if err := json.NewEncoder(os.Stdout).Encode(map[string]interface{}{
-				"file_path": filePath,
-				"matched":   true,
-			}); err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(1)
+			writeFileVerifyReport(fileVerifyReport{
+				FilePath:     filePath,
+				Matched:      matched,
+				ExpectedHash: strings.TrimSpace(expectedHash),
+				ActualHash:   result.Hash,
+				HashType:     result.HashType,
+			})
+		} else {
+			if matched && !quiet {
+				fmt.Printf("File %s: hash matches!\n", filePath)
 			}
-		} else if !quiet {
-			fmt.Printf("File %s: hash matches!\n", filePath)
+			if !matched {
+				fmt.Fprintf(os.Stderr, "Error: hash does not match. Expected: %s, Got: %s\n", expectedHash, result.Hash)
+			}
+		}
+		if !matched {
+			os.Exit(1)
 		}
 		return
 	}
@@ -133,7 +163,7 @@ Examples:
 
 		reference, err := hashutil.LoadHashReference(refPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Gagal memuat referensi hash: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Failed to load hash reference: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -141,7 +171,7 @@ Examples:
 
 		actual, err := hashutil.GenerateDirHashWithExcludes(dirPath, hashType, allExcludes, nil, nil)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Gagal hashing direktori: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Failed to hash directory: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -162,5 +192,12 @@ Examples:
 			os.Exit(1)
 		}
 		return
+	}
+}
+
+func writeFileVerifyReport(report fileVerifyReport) {
+	if err := json.NewEncoder(os.Stdout).Encode(report); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 }

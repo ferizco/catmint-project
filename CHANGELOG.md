@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/).
 
+## [Draft v1.3]
+
+- Added smoke test package
+- Added user experience improvements
+- Refactored hashutil package structure
+- Updated documentation and release notes workflow
+- Switched CLI version handling to build-time injection
+
 ## [v1.2.0] 2026-07-21
 
 ### Added
