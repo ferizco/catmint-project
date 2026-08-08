@@ -4,13 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/).
 
-## [Draft v1.3]
+## [v1.3.0] - 2026-08-08
 
-- Added smoke test package
-- Added user experience improvements
-- Refactored hashutil package structure
-- Updated documentation and release notes workflow
-- Switched CLI version handling to build-time injection
+### Added
+
+- Added Go-based CLI smoke tests that build a temporary Catmint binary and exercise the main command flows end-to-end.
+- Added the `--relative` option for directory hashing so generated reference files can be reused across folders and machines.
+- Added machine-readable JSON output for single-file verification failures.
+- Added Docker image distribution through GHCR for CI/CD usage.
+- Added pinned `govulncheck` to the release pipeline to block releases when reachable Go vulnerabilities are detected.
+
+### Changed
+
+- Refactored the `hashutil` package into focused files for hashing, path normalization, comparison, and parsing.
+- Switched CLI version handling to build-time injection from release tags.
+- Updated release workflow to publish release notes from `CHANGELOG.md`.
+- Updated release workflow to publish multi-arch container images for `linux/amd64` and `linux/arm64`.
+- Updated release builds and container builds to Go 1.25.12.
+- Updated README with smoke test, relative path hashing, JSON verification, version injection, and GHCR usage documentation.
+
+### Fixed
+
+- Standardized CLI runtime error messages in English.
 
 ## [v1.2.0] 2026-07-21
 

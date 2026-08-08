@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   id-token: write
+  packages: write
 
 jobs:
   release:
@@ -20,13 +21,19 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: "1.25.12"
 
       - name: Run unit tests
         run: go test ./...
 
       - name: Run go vet
         run: go vet ./...
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.6.0
+
+      - name: Run govulncheck
+        run: govulncheck ./...
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
@@ -216,7 +223,45 @@ jobs:
           https://search.sigstore.dev/?logIndex=${WINDOWS_LOGINDEX}
 
           The Rekor entries show signing time, artifact hash, and GitHub Actions workflow identity.
+
+          ## Container Image
+
+          ghcr.io/${GITHUB_REPOSITORY_OWNER}/catmint:${TAG_NAME}
+          ghcr.io/${GITHUB_REPOSITORY_OWNER}/catmint:latest
           EOF
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/catmint
+          tags: |
+            type=raw,value=${{ github.ref_name }}
+            type=raw,value=latest
+
+      - name: Build and publish container image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Create GitHub Release + upload assets
         uses: softprops/action-gh-release@v2

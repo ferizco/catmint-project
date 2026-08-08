@@ -1,4 +1,4 @@
-# catmint ![version](https://img.shields.io/badge/version-1.2.0-blue.svg)
+# catmint ![version](https://img.shields.io/badge/version-1.3.0-blue.svg)
 
 catmint is a small command-line tool for generating and verifying file hashes. It is useful for integrity checks, folder checksum snapshots, and CI scripts that need a clear success or failure exit code.
 
@@ -45,6 +45,31 @@ catmint --help
 ```
 
 Local builds use `dev` as the default version. Release builds inject the version from the Git tag at build time.
+
+## Docker / GHCR
+
+catmint can also run as a container image from GitHub Container Registry:
+
+```sh
+docker run --rm ghcr.io/ferizco/catmint:v1.3.0 --version
+```
+
+Use it in a project directory by mounting the current working directory to `/work`:
+
+```sh
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/ferizco/catmint:v1.3.0 hash -d ./dist -o hash.json --relative
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/ferizco/catmint:v1.3.0 verify -d ./dist -ref hash.json --json
+```
+
+In CI/CD pipelines, use the `verify` command exit code as the gate. A mismatch or missing file exits with code `1`, which should fail the pipeline.
+
+Example GitHub Actions step:
+
+```yaml
+- name: Verify release artifacts
+  run: |
+    docker run --rm -v "$PWD:/work" -w /work ghcr.io/ferizco/catmint:v1.3.0 verify -d ./dist -ref hash.json --json
+```
 
 ## Quick Start
 
